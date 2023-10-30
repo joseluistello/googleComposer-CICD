@@ -26,7 +26,7 @@ default_args = {
 }
 
 def get_data(bucket_name):
-    tickers = ['MSFT','AMZN','GOOGL']
+    tickers = ['AMZN','GOOGL']
 
     today = dt.datetime.now()
     start = dt.datetime(2023, 2, 1,)
@@ -87,7 +87,6 @@ with DAG('Stock_data',
         {'name': 'Date', 'type': 'DATE', 'mode': 'NULLABLE'},
         {'name': 'AMZN', 'type': 'FLOAT64', 'mode': 'NULLABLE'},
         {'name': 'GOOGL', 'type': 'FLOAT64', 'mode': 'NULLABLE'},
-        {'name': 'MSFT', 'type': 'FLOAT64', 'mode': 'NULLABLE'},
             ],
         )
     
