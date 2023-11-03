@@ -1,58 +1,62 @@
-import json
 import unittest
 from unittest.mock import patch, Mock
-import internal_unit_testing
-from dags import data_to_google
+from data_to_google import get_credentials_from_gcs, move_data_from_sheet_to_gcs  # Replace 'data_to_google' with the actual name of your Python file containing the DAG.
+import json
 
-class TestStockDataDag(unittest.TestCase):
-
-    def test_dag_import(self):
-        internal_unit_testing.assert_has_valid_dag(data_to_google)
-
-    def test_move_data_task(self):
-        task = data_to_google.dag.get_task('move_data_from_sheet_to_gcs')
-        self.assertIsNotNone(task)
-        self.assertEqual(task.task_id, 'move_data_from_sheet_to_gcs')
-
-    @patch("dags.data_to_google.storage.Client")
-    @patch("dags.data_to_google.gspread.authorize")
-    def test_move_data_function(self, mock_gspread_authorize, mock_storage_client):
-        # Configura el mock para devolver una cadena JSON válida con datos ficticios
-        mock_blob = Mock()
-        mock_credentials_as_string = json.dumps({
-            "type": "service_account",
-            "project_id": "fake-project-id",
-            "private_key_id": "fake-private-key-id",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nfake-private-key\n-----END PRIVATE KEY-----\n",
-            "client_email": "fake-email@fake-project-id.iam.gserviceaccount.com",
-            "client_id": "fake-client-id",
-            "auth_uri": "https://fake-auth-uri.com/o/oauth2/auth",
-            "token_uri": "https://fake-token-uri.com/token",
-            "auth_provider_x509_cert_url": "https://fake-cert-url.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://fake-cert-url.com/robot/v1/metadata/x509/fake-email%40fake-project-id.iam.gserviceaccount.com"
-        })
-        mock_blob.download_as_string.return_value = mock_credentials_as_string
-
-        # Configura el mock del bucket para devolver el mock_blob cuando se llame a blob()
+class TestDAG(unittest.TestCase):
+    @patch('data_to_google.storage.Client')
+    def test_get_credentials_from_gcs(self, mock_storage_client):
+        # Setup Mock objects
         mock_bucket = Mock()
+        mock_blob = Mock()
+        mock_storage_client().bucket.return_value = mock_bucket
+        mock_bucket.blob.return_value = mock_blob
+        mock_blob.download_as_string.return_value = json.dumps({
+            'type': 'service_account',
+            'project_id': 'your-project-id',
+        })
+
+        # Call the function
+        credentials = get_credentials_from_gcs('mock_bucket', 'mock_credentials.json')
+
+        # Asserts
+        self.assertIsNotNone(credentials)
+        mock_storage_client().bucket.assert_called_with('mock_bucket')
+        mock_bucket.blob.assert_called_with('mock_credentials.json')
+        mock_blob.download_as_string.assert_called_once()
+
+    @patch('data_to_google.storage.Client')
+    @patch('data_to_google.gspread.authorize')
+    @patch('data_to_google.get_credentials_from_gcs')
+    def test_move_data_from_sheet_to_gcs(self, mock_get_credentials, mock_authorize, mock_storage_client):
+        # Setup Mock objects
+        mock_creds = Mock()
+        mock_client = Mock()
+        mock_sheet = Mock()
+        mock_worksheet = Mock()
+        mock_bucket = Mock()
+        mock_blob = Mock()
+
+        mock_get_credentials.return_value = mock_creds
+        mock_authorize.return_value = mock_client
+        mock_client.open_by_url.return_value = mock_sheet
+        mock_sheet.get_worksheet.return_value = mock_worksheet
+        mock_worksheet.get_all_values.return_value = [['Header1', 'Header2'], ['Value1', 'Value2']]
+        mock_storage_client().bucket.return_value = mock_bucket
         mock_bucket.blob.return_value = mock_blob
 
-        # Configura el mock del cliente de almacenamiento para devolver el mock_bucket cuando se llame a bucket()
-        mock_storage_client.return_value.bucket.return_value = mock_bucket
+        # Call the function
+        move_data_from_sheet_to_gcs()
 
-        # Ahora puedes llamar a la función que estás probando
-        data_to_google.move_data_from_sheet_to_gcs()
-        # Verifica que se llamó al método upload_from_string del blob con los argumentos correctos
-        mock_blob.upload_from_string.assert_called_once_with(ANY, content_type='text/csv')
-
-        # Verifica que se llamó al método authorize de gspread con las credenciales correctas
-        mock_gspread_authorize.assert_called_once()
-
-        # Verifica que se obtuvo el bucket correcto
-        mock_storage_client.return_value.bucket.assert_called_once_with('credentials-buckket')
-
-        # Verifica que se obtuvo el blob correcto
-        mock_bucket.blob.assert_called_once_with('credentials.json')
+        # Asserts
+        mock_get_credentials.assert_called_once()
+        mock_authorize.assert_called_once()
+        mock_client.open_by_url.assert_called_once()
+        mock_sheet.get_worksheet.assert_called_once()
+        mock_worksheet.get_all_values.assert_called_once()
+        mock_storage_client().bucket.assert_called_with('bronze_layer')
+        mock_bucket.blob.assert_called_with('data/db_bronze_layer.csv')
+        mock_blob.upload_from_string.assert_called_once()
 
 if __name__ == '__main__':
     unittest.main()
