@@ -13,15 +13,14 @@ class TestStockDataDag(unittest.TestCase):
         self.assertIsNotNone(task)
         self.assertEqual(task.task_id, 'move_data_from_sheet_to_gcs')
 
-    @patch("path_to_your_module_containing_the_function.storage.Client")
-    @patch("path_to_your_module_containing_the_function.gspread.authorize")
+    @patch("data_to_google.storage.Client")
+    @patch("data_to_google.gspread.authorize")
     def test_move_data_function(self, mock_gspread_authorize, mock_storage_client):
         # Mock the behavior of gspread and GCS so no real operations are performed
         mock_gspread_authorize.return_value = ...  # Mocked return value
         mock_storage_client.return_value = ...  # Mocked return value
 
-        from path_to_your_module_containing_the_function import move_data_from_sheet_to_gcs
-        result = move_data_from_sheet_to_gcs()
+        result = data_to_google.move_data_from_sheet_to_gcs()
         self.assertEqual(result, expected_result)  # Replace expected_result with what you expect
 
 if __name__ == '__main__':
