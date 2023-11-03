@@ -1,0 +1,7 @@
+# .gitignore
+
+# Ignorar la carpeta de credenciales
+credentials/
+
+# Ignorar un archivo de credenciales específico
+my_credentials.json

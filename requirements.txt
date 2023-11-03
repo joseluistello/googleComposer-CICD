@@ -1,2 +1,6 @@
 apache-airflow==2.3.3
 yfinance>=0.2.1
+gspread>=5.0.1
+google-auth>=2.3.3
+google-auth-oauthlib>=0.4.6
+google-cloud-storage>=1.42.3
