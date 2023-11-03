@@ -1,15 +1,15 @@
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from google.cloud import storage
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 from datetime import datetime
+import csv
+import io
 
 def move_data_from_sheet_to_gcs():
-    # Configura la autenticación para Google Sheets
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/spreadsheets",
-             "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name('../credentials/credentials.json', scope)
+    # Configura la autenticación para Google Sheets y GCS
+    creds = Credentials.from_service_account_file('../credentials/credentials.json')
     client = gspread.authorize(creds)
 
     # Abre el Google Sheet y lee los datos
@@ -17,17 +17,17 @@ def move_data_from_sheet_to_gcs():
     sheet = spreadsheet.get_worksheet(0)
     data = sheet.get_all_values()
 
-    # Escribe los datos en un archivo temporal
-    with open('temp_data.csv', 'w') as f:
-        for row in data:
-            f.write(','.join(row))
-            f.write('\n')
+    # Escribe los datos en un flujo de bytes en memoria
+    in_memory_csv = io.StringIO()
+    writer = csv.writer(in_memory_csv)
+    writer.writerows(data)
+    in_memory_csv.seek(0)
 
     # Carga el archivo en GCS
     storage_client = storage.Client()
     bucket = storage_client.bucket('bronze_layer')
     blob = bucket.blob('data/temp_data.csv')
-    blob.upload_from_filename('temp_data.csv')
+    blob.upload_from_string(in_memory_csv.getvalue(), content_type='text/csv')
 
 default_args = {
     'owner': 'you',
@@ -42,4 +42,3 @@ move_data_task = PythonOperator(
     python_callable=move_data_from_sheet_to_gcs,
     dag=dag
 )
-
