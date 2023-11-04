@@ -4,7 +4,6 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, 'dags'))
 import unittest
 from unittest.mock import patch, Mock
-from data_to_google import get_credentials_from_gcs, move_data_from_sheet_to_gcs
 import json
 
 class TestDAG(unittest.TestCase):
