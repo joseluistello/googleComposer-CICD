@@ -51,7 +51,7 @@ default_args = {
 dag = DAG(
     'data_swag_2',
     default_args=default_args,
-    description='DAG para mover datos de Google Sheets a GCS',
+    description='DAG para mover datos de Sheets a un Bucket',
     schedule_interval='@daily',
 )
 
