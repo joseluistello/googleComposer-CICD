@@ -1,20 +1,20 @@
 steps:
+  # install dependencies
   - name: 'python:3.8-slim'
-    entrypoint: 'pip'
+    entrypoint: pip
     args: ['install', '-r', 'requirements.txt', '--user']
-
+  
   - name: 'python:3.8-slim'
-    entrypoint: 'pip'
+    entrypoint: pip
     args: ['install', '-r', 'requirements-test.txt', '--user']
 
+  # run tests with pytest and set PYTHONPATH
   - name: 'python:3.8-slim'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        export PYTHONPATH=$PYTHONPATH:/workspace
-        pytest -s dags/
-    dir: '/workspace'
-
+        PYTHONPATH=./dags pytest -s ./tests/
+    
 options:
   logging: CLOUD_LOGGING_ONLY
