@@ -1,12 +1,15 @@
+import os
+import sys
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(current_dir, 'dags'))
 import unittest
 from unittest.mock import patch, Mock
-from data_to_google import get_credentials_from_gcs, move_data_from_sheet_to_gcs  # Replace 'data_to_google' with the actual name of your Python file containing the DAG.
+from data_to_google import get_credentials_from_gcs, move_data_from_sheet_to_gcs
 import json
 
 class TestDAG(unittest.TestCase):
     @patch('data_to_google.storage.Client')
     def test_get_credentials_from_gcs(self, mock_storage_client):
-        # Setup Mock objects
         mock_bucket = Mock()
         mock_blob = Mock()
         mock_storage_client().bucket.return_value = mock_bucket
@@ -16,10 +19,8 @@ class TestDAG(unittest.TestCase):
             'project_id': 'your-project-id',
         })
 
-        # Call the function
         credentials = get_credentials_from_gcs('mock_bucket', 'mock_credentials.json')
 
-        # Asserts
         self.assertIsNotNone(credentials)
         mock_storage_client().bucket.assert_called_with('mock_bucket')
         mock_bucket.blob.assert_called_with('mock_credentials.json')
@@ -45,10 +46,8 @@ class TestDAG(unittest.TestCase):
         mock_storage_client().bucket.return_value = mock_bucket
         mock_bucket.blob.return_value = mock_blob
 
-        # Call the function
         move_data_from_sheet_to_gcs()
 
-        # Asserts
         mock_get_credentials.assert_called_once()
         mock_authorize.assert_called_once()
         mock_client.open_by_url.assert_called_once()
